@@ -1,9 +1,14 @@
 import { db } from "../db.js";
-import { SNSClient, PublishCommand } from "@aws-sdk/client-sns";
+import twilio from "twilio";
+
 import dotenv from "dotenv";
 dotenv.config();
 
-const sns = new SNSClient({ region: process.env.AWS_REGION });
+// Initialize Twilio client
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
+);
 
 export const sendOtp = async (req, res) => {
   const { phoneNumber } = req.body;
@@ -37,13 +42,13 @@ export const sendOtp = async (req, res) => {
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
 
   try {
-    // Save to DB
+    // Save OTP to DB
     await db.execute("INSERT INTO otps (phone_number, otp) VALUES (?, ?)", [
       phoneNumber,
       otp,
     ]);
 
-    // 🔁 Return directly in development
+    // In development or staging, return OTP directly (for testing)
     if (process.env.NODE_ENV !== "production") {
       return res.json({
         success: true,
@@ -52,24 +57,15 @@ export const sendOtp = async (req, res) => {
       });
     }
 
-    // Send SMS via AWS SNS in production
+    // Send OTP via Twilio in production
     const message = `Learn Shack OTP: ${otp}`;
-    const params = {
-      Message: message,
-      PhoneNumber: phoneNumber,
-      MessageAttributes: {
-        "AWS.SNS.SMS.SenderID": {
-          DataType: "String",
-          StringValue: "LearnShack",
-        },
-        "AWS.SNS.SMS.SMSType": {
-          DataType: "String",
-          StringValue: "Transactional",
-        },
-      },
-    };
 
-    await sns.send(new PublishCommand(params));
+    // Production configuration (Twilio auto-selects a random number)
+    await twilioClient.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER, // Optional, Twilio can randomize if this is omitted
+      to: phoneNumber,
+    });
 
     res.json({ success: true, message: "OTP sent" });
   } catch (err) {

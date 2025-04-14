@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import otpRoutes from "./routes/otpRoutes.js";
+import getS3 from "./routes/getS3.js";
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(cors());
 // Middleware
 app.use(express.json());
 app.use("/otp", otpRoutes);
+app.use("/get-s3", getS3);
 
 // Routes
 app.get("/", (req, res) => {
