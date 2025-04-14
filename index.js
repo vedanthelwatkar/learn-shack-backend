@@ -11,10 +11,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const corsOptions = {
-  origin: ["http://localhost:8000", "http://localhost:5173"],
+  origin: "*", // Allow all origins for testing
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "Accept",
+    "X-Requested-With",
+  ],
+  exposedHeaders: ["Content-Range", "X-Content-Range"],
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  maxAge: 86400, // Cache preflight response for 24 hours
 };
 
 app.use(cors(corsOptions));
