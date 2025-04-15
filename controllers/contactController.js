@@ -1,3 +1,5 @@
+import { db } from "../db.js";
+
 export const postContactInfo = async (req, res) => {
   try {
     const {
