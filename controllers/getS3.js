@@ -27,11 +27,10 @@ export const getS3 = async (req, res) => {
       });
     }
 
-    const fileUrls = result.Contents.filter((obj) => obj.Key) // optionally filter out folders if needed
-      .map((obj) => ({
-        key: obj.Key,
-        url: `https://${bucketName}.s3.ap-south-1.amazonaws.com/${obj.Key}`,
-      }));
+    const fileUrls = result.Contents.filter((obj) => obj.Key).map((obj) => ({
+      key: obj.Key,
+      url: `https://${bucketName}.s3.ap-south-1.amazonaws.com/${obj.Key}`,
+    }));
 
     return res.status(200).json({
       success: true,

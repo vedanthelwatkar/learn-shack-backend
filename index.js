@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import otpRoutes from "./routes/otpRoutes.js";
 import getS3 from "./routes/getS3.js";
+import contactRoutes from "./routes/contactRoutes.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use("/otp", otpRoutes);
 app.use("/get-s3", getS3);
+app.use("/contact", contactRoutes);
 
 // Routes
 app.get("/", (req, res) => {
