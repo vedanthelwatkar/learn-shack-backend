@@ -11,7 +11,12 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173", 
+    "https://learnshackedu.com",
+    "https://learn-shack.vercel.app" ],
+}));
 
 // Middleware
 app.use(express.json());
