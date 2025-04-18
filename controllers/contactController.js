@@ -53,3 +53,21 @@ export const postContactInfo = async (req, res) => {
     });
   }
 };
+
+export const getContactInfo = async (req, res) => {
+  try {
+    const [result] = await db.execute(`SELECT * FROM contact`);
+
+    return res.status(200).json({
+      success: true,
+      message: "Contact information saved successfully",
+      data: { result },
+    });
+  } catch (error) {
+    console.error("Database error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Internal Server Error",
+    });
+  }
+};

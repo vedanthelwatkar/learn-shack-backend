@@ -1,8 +1,13 @@
 import express from "express";
-import { postContactInfo } from "../controllers/contactController.js";
+import {
+  getContactInfo,
+  postContactInfo,
+} from "../controllers/contactController.js";
 
 const router = express.Router();
 
 router.post("/", postContactInfo);
+
+router.get("/users", getContactInfo);
 
 export default router;
