@@ -55,13 +55,49 @@ export const postContactInfo = async (req, res) => {
 };
 
 export const getContactInfo = async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+  const search = req.query.search || "";
+
   try {
-    const [result] = await db.execute(`SELECT * FROM contact`);
+    let query = `SELECT * FROM contact`;
+    let countQuery = `SELECT COUNT(*) as total FROM contact`;
+    let whereClause = "";
+
+    if (search) {
+      whereClause = ` WHERE full_name LIKE ? OR email LIKE ? OR phone_number LIKE ?`;
+    }
+
+    const finalQuery = `${query}${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    const [data] = await db.execute(finalQuery, [
+      `%${search}%`,
+      `%${search}%`,
+      `%${search}%`,
+    ]);
+
+    const finalCountQuery = `${countQuery}${whereClause}`;
+    const [countResult] = await db.execute(finalCountQuery, [
+      `%${search}%`,
+      `%${search}%`,
+      `%${search}%`,
+    ]);
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
 
     return res.status(200).json({
       success: true,
-      message: "Contact information saved successfully",
-      data: { result },
+      message: "Contact information fetched successfully",
+      data: {
+        contacts: data,
+        pagination: {
+          total,
+          page,
+          totalPages,
+          limit,
+        },
+      },
     });
   } catch (error) {
     console.error("Database error:", error);
