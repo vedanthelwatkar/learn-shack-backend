@@ -54,50 +54,103 @@ export const postContactInfo = async (req, res) => {
   }
 };
 
-export const getContactInfo = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const offset = (page - 1) * limit;
-  const search = req.query.search || "";
-
+export const getUsers = async (req, res) => {
   try {
-    let query = `SELECT * FROM contact`;
-    let countQuery = `SELECT COUNT(*) as total FROM contact`;
-    let whereClause = "";
+    let {
+      page = 1,
+      perPage = 10,
+      search = "",
+      sortField = "created_at",
+      sortOrder = "desc",
+    } = req.query;
 
-    if (search) {
-      whereClause = ` WHERE full_name LIKE ? OR email LIKE ? OR phone_number LIKE ?`;
+    // Ensure these are numbers
+    page = Number.parseInt(page);
+    perPage = Number.parseInt(perPage);
+
+    // Calculate offset for pagination
+    const offset = (page - 1) * perPage;
+
+    // Build queries based on whether search is provided
+    let countQuery, usersQuery, countParams, usersParams;
+
+    if (search && search.trim() !== "") {
+      // With search condition
+      const searchValue = `%${search}%`;
+
+      countQuery = `
+        SELECT COUNT(*) as total FROM contact
+        WHERE full_name LIKE ? OR email LIKE ? OR phone_number LIKE ?
+      `;
+      countParams = [searchValue, searchValue, searchValue];
+
+      // Using direct values for LIMIT and OFFSET
+      usersQuery = `
+        SELECT * FROM contact
+        WHERE full_name LIKE ? OR email LIKE ? OR phone_number LIKE ?
+        ORDER BY ${sortField} ${sortOrder.toUpperCase()}
+        LIMIT ${perPage} OFFSET ${offset}
+      `;
+      usersParams = [searchValue, searchValue, searchValue];
+    } else {
+      // Without search condition
+      countQuery = `SELECT COUNT(*) as total FROM contact`;
+      countParams = [];
+
+      // Using direct values for LIMIT and OFFSET
+      usersQuery = `
+        SELECT * FROM contact
+        ORDER BY ${sortField} ${sortOrder.toUpperCase()}
+        LIMIT ${perPage} OFFSET ${offset}
+      `;
+      usersParams = [];
     }
 
-    const finalQuery = `${query}${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-    const [data] = await db.execute(finalQuery, [
-      `%${search}%`,
-      `%${search}%`,
-      `%${search}%`,
-    ]);
-
-    const finalCountQuery = `${countQuery}${whereClause}`;
-    const [countResult] = await db.execute(finalCountQuery, [
-      `%${search}%`,
-      `%${search}%`,
-      `%${search}%`,
-    ]);
-
+    // Execute count query
+    const [countResult] = await db.execute(countQuery, countParams);
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+
+    // Execute users query
+    const [users] = await db.execute(usersQuery, usersParams);
 
     return res.status(200).json({
       success: true,
-      message: "Contact information fetched successfully",
+      message: "Users fetched successfully",
       data: {
-        contacts: data,
-        pagination: {
-          total,
-          page,
-          totalPages,
-          limit,
-        },
+        users,
+        total,
+        page,
+        perPage,
       },
+    });
+  } catch (error) {
+    console.error("Database error:", error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || "Internal Server Error",
+    });
+  }
+};
+
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const [result] = await db.execute(`SELECT * FROM contact WHERE id = ?`, [
+      id,
+    ]);
+
+    if (result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "User fetched successfully",
+      data: { user: result[0] },
     });
   } catch (error) {
     console.error("Database error:", error);

@@ -1,13 +1,10 @@
 import express from "express";
-import {
-  getContactInfo,
-  postContactInfo,
-} from "../controllers/contactController.js";
+import { getUsers, postContactInfo } from "../controllers/contactController.js";
 
 const router = express.Router();
 
 router.post("/", postContactInfo);
 
-router.get("/users", getContactInfo);
+router.get("/users", getUsers);
 
 export default router;
