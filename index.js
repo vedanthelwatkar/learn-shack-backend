@@ -16,10 +16,10 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:5174",
+      "http://learnshackedu.com",
       "https://learnshackedu.com",
-      "http://learnshackedu.com",
-      "http://learnshackedu.com",
       "http://www.learnshackedu.com",
+      "https://www.learnshackedu.com",
       "https://learn-shack.vercel.app",
     ],
   })
