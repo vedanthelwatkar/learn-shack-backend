@@ -5,6 +5,6 @@ const router = express.Router();
 
 router.post("/", postContactInfo);
 
-router.get("/users", getUsers);
+router.get("/", getUsers);
 
 export default router;
