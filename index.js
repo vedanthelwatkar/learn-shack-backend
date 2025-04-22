@@ -21,6 +21,7 @@ app.use(
       "http://www.learnshackedu.com",
       "https://www.learnshackedu.com",
       "https://learn-shack.vercel.app",
+      "http://192.168.0.103:5173/",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
