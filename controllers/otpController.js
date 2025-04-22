@@ -6,44 +6,47 @@ dotenv.config();
 const sns = new SNSClient({ region: process.env.AWS_REGION });
 
 export const sendOtp = async (req, res) => {
-  const { phoneNumber } = req.body;
+  const { phoneNumber, resend } = req.body;
 
-  // ======= Rate Limiting Block =======
-  const [countResult] = await db.execute(
-    `SELECT COUNT(*) as count FROM otps 
-     WHERE phone_number = ? AND created_at >= NOW() - INTERVAL 1 HOUR`,
-    [phoneNumber]
-  );
-
-  if (countResult[0].count >= 5) {
-    const [earliest] = await db.execute(
-      `SELECT MIN(created_at) as earliest FROM otps 
-       WHERE phone_number = ? AND created_at >= NOW() - INTERVAL 1 HOUR`,
-      [phoneNumber]
-    );
-
-    const earliestTime = new Date(earliest[0].earliest);
-    const retryAfter = new Date(earliestTime.getTime() + 60 * 60 * 1000);
-    const now = new Date();
-    const waitMinutes = Math.ceil((retryAfter - now) / 60000);
-
-    return res.status(429).json({
+  if (!phoneNumber) {
+    return res.status(400).json({
       success: false,
-      message: `Too many OTP requests. Try again in ${waitMinutes} minute(s).`,
+      message: "Phone number is required",
     });
   }
 
-  // ======= Generate OTP =======
-  const otp = Math.floor(1000 + Math.random() * 9000).toString();
-
   try {
+    // ======= Rate Limiting Block (skip if it's a resend request) =======
+    if (!resend) {
+      const [countResult] = await db.execute(
+        `SELECT COUNT(*) as count FROM otps 
+         WHERE phone_number = ? AND created_at >= NOW() - INTERVAL 1 HOUR`,
+        [phoneNumber]
+      );
+
+      if (countResult[0].count >= 5) {
+        const [earliest] = await db.execute(
+          `SELECT MIN(created_at) as earliest FROM otps 
+           WHERE phone_number = ? AND created_at >= NOW() - INTERVAL 1 HOUR`,
+          [phoneNumber]
+        );
+        return res.status(429).json({
+          success: false,
+          message: `Too many OTP requests. Try again later.`,
+        });
+      }
+    }
+
+    // ======= Generate OTP =======
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+
     // Save to DB
     await db.execute("INSERT INTO otps (phone_number, otp) VALUES (?, ?)", [
       phoneNumber,
       otp,
     ]);
 
-    // 🔁 Return directly in development
+    // Return directly in development
     if (process.env.NODE_ENV !== "production") {
       return res.json({
         success: true,
@@ -71,7 +74,7 @@ export const sendOtp = async (req, res) => {
 
     await sns.send(new PublishCommand(params));
 
-    res.json({ success: true, message: "OTP sent" });
+    res.json({ success: true, message: resend ? "OTP resent" : "OTP sent" });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -85,16 +88,16 @@ export const verifyOtp = async (req, res) => {
     const [rows] = await db.execute(
       `SELECT * FROM otps 
        WHERE phone_number = ? 
-         AND otp = ? 
-         AND created_at >= NOW() - INTERVAL 5 MINUTE`,
-      [phoneNumber, otp]
+         AND created_at >= NOW() - INTERVAL 5 MINUTE
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [phoneNumber]
     );
 
-    if (rows.length > 0) {
+    if (rows.length > 0 && rows[0].otp === otp) {
       await db.execute("DELETE FROM otps WHERE phone_number = ?", [
         phoneNumber,
       ]);
-
       res.json({ success: true, message: "OTP verified" });
     } else {
       res
