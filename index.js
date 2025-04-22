@@ -11,19 +11,22 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://learnshackedu.com",
-      "https://learnshackedu.com",
-      "http://www.learnshackedu.com",
-      "https://www.learnshackedu.com",
-      "https://learn-shack.vercel.app",
-    ],
-  })
-);
+// CORS middleware - simpler version that allows all origins
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    return res.status(204).send();
+  }
+
+  next();
+});
 
 // Middleware
 app.use(express.json());
