@@ -22,10 +22,10 @@ app.use(
       "https://www.learnshackedu.com",
       "https://learn-shack.vercel.app",
     ],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-app.options("/{*any}", cors());
 
 // Middleware
 app.use(express.json());
