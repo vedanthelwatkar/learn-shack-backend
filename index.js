@@ -13,15 +13,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://learnshackedu.com",
-      "https://learnshackedu.com",
-      "http://www.learnshackedu.com",
-      "https://www.learnshackedu.com",
-      "https://learn-shack.vercel.app",
-    ],
+    origin: "*", // Temporarily allow all origins for testing
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
